@@ -1,0 +1,51 @@
+{
+    "name": "screener-fundamentals",
+    "version": "1.0.0",
+    "description": "Fundamental stock data service powered by Screener.in",
+    "tools": [
+      {
+        "type": "http",
+        "name": "get_fundamentals",
+        "description": "Fetch full fundamental data for an Indian stock",
+        "method": "GET",
+        "url": "http://127.0.0.1:8000/fundamentals/{ticker}",
+        "path_params": {
+          "ticker": {
+            "type": "string",
+            "description": "Stock ticker symbol (e.g. COALINDIA)"
+          }
+        },
+        "query_params": {
+          "force": {
+            "type": "boolean",
+            "description": "Force re-ingestion from Screener",
+            "default": false
+          }
+        }
+      },
+      {
+        "type": "http",
+        "name": "get_fundamental_status",
+        "description": "Check ingestion status and progress",
+        "method": "GET",
+        "url": "http://127.0.0.1:8000/fundamentals/{ticker}/status",
+        "path_params": {
+          "ticker": {
+            "type": "string"
+          }
+        }
+      },
+      {
+        "type": "http",
+        "name": "bulk_ingest",
+        "description": "Trigger ingestion for multiple tickers",
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/fundamentals/ingest/bulk",
+        "body_schema": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    ]
+  }
+  
