@@ -42,3 +42,5 @@ faiss-cpu
 
 # Observability
 structlog
+langgraph
+langchain-openai

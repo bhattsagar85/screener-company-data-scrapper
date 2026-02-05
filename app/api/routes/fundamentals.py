@@ -7,6 +7,7 @@ from app.database.schema import (
     company_ratios,
     quarterly_financials,
     annual_financials,
+    shareholding_pattern,
     fundamental_status
 )
 from app.services.background import fetch_and_store_fundamentals
@@ -45,7 +46,7 @@ def get_fundamentals(
     # FORCE OVERRIDE (developer-friendly)
     # -------------------------------------------------
     if force:
-        background_tasks.add_task(fetch_and_store_fundamentals, ticker)
+        background_tasks.add_task(lambda: fetch_and_store_fundamentals(ticker))
         return {
             "ticker": ticker,
             "status": "forced",
@@ -58,7 +59,7 @@ def get_fundamentals(
     ).mappings().first()
 
     if not status_row or status_row["status"] in ("PENDING", "FAILED"):
-        background_tasks.add_task(fetch_and_store_fundamentals, ticker)
+        background_tasks.add_task(lambda: fetch_and_store_fundamentals(ticker))
         return {
             "ticker": ticker,
             "status": "processing",
@@ -80,7 +81,7 @@ def get_fundamentals(
         }
 
     if not is_data_fresh(db, ticker, settings.DATA_TTL_DAYS):
-        background_tasks.add_task(fetch_and_store_fundamentals, ticker)
+        background_tasks.add_task(lambda: fetch_and_store_fundamentals(ticker))
         return {
             "ticker": ticker,
             "status": "stale",
@@ -103,13 +104,34 @@ def get_fundamentals(
         .where(annual_financials.c.ticker == ticker)
     ).mappings().all()
 
+    shareholding = db.execute(
+        select(shareholding_pattern)
+        .where(shareholding_pattern.c.ticker == ticker)
+    ).mappings().all()
+
+    profit_loss = []
+    balance_sheet = []
+    cash_flows = []
+
+    for row in annual:
+        metric = row.get("metric") or ""
+        if metric.startswith("balance_sheet:"):
+            balance_sheet.append({**row, "metric": metric.replace("balance_sheet:", "", 1)})
+        elif metric.startswith("cash_flow:"):
+            cash_flows.append({**row, "metric": metric.replace("cash_flow:", "", 1)})
+        else:
+            profit_loss.append(row)
+
     return {
         "ticker": ticker,
         "status": "ready",
         "progress_pct": 100,
         "ratios": ratios,
         "quarterly_results": quarterly,
-        "annual_financials": annual
+        "annual_financials": profit_loss,
+        "balance_sheet": balance_sheet,
+        "cash_flows": cash_flows,
+        "shareholding_pattern": shareholding
     }
 
 
@@ -235,7 +257,7 @@ def bulk_trigger_ingestion(
         ).mappings().first()
 
         if not row or row["status"] in ("NOT_STARTED", "FAILED"):
-            background_tasks.add_task(fetch_and_store_fundamentals, ticker)
+            background_tasks.add_task(lambda: fetch_and_store_fundamentals(ticker))
             triggered.append(ticker)
 
     return {

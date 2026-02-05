@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     USER_AGENT: str = "Mozilla/5.0 (compatible; ScreenerBot/1.0)"
     REQUEST_DELAY_SECONDS: int = 2
 
-    DATA_TTL_DAYS: int = 30
+    DATA_TTL_DAYS: int = 7
     GLOBAL_RATE_LIMIT_SECONDS: int = 2
 
 settings = Settings()

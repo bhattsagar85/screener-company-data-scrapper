@@ -3,7 +3,10 @@ from contextlib import asynccontextmanager
 
 from app.database.schema import create_tables
 from app.api.routes.fundamentals import router as fundamentals_router
+from app.api.routes.agent import router as agent_router
 
+from dotenv import load_dotenv
+load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -24,3 +27,4 @@ app = FastAPI(
 
 # ✅ REGISTER ROUTES ON THE SAME APP
 app.include_router(fundamentals_router)
+app.include_router(agent_router)
